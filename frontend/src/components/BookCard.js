@@ -14,7 +14,13 @@ const BookCard = ({ book, onVote, onViewDetails }) => {
       <div className="book-info">
         <h3>{book.title}</h3>
         <p className="author">by {book.author}</p>
-        <p className="description">{book.description.substring(0, 150)}...</p>
+        <p className="description">
+          {book.description ? 
+            (book.description.length > 150 ? 
+              book.description.substring(0, 150) + '...' : 
+              book.description) : 
+            'No description available'}
+        </p>
         <div className="book-meta">
           <span className="status">{book.status}</span>
           <span className="pages">{book.totalPages} pages</span>

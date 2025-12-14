@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Books from './pages/Books';
+import BookDetail from './pages/BookDetail';
 import ProposeBook from './pages/ProposeBook';
 import Progress from './pages/Progress';
 import './App.css';
@@ -22,6 +23,7 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/books" element={<Books />} />
+              <Route path="/books/:id" element={<BookDetail />} />
               <Route path="/propose" element={<ProposeBook />} />
               <Route path="/progress" element={<Progress />} />
             </Routes>
