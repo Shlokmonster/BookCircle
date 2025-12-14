@@ -110,6 +110,7 @@ router.post('/:id/vote', auth, async (req, res) => {
 
     await book.save();
     await book.populate('proposedBy', 'username');
+    await book.populate('votes.user', 'username');
     
     res.json(book);
   } catch (error) {
@@ -134,6 +135,7 @@ router.delete('/:id/vote', auth, async (req, res) => {
 
     await book.save();
     await book.populate('proposedBy', 'username');
+    await book.populate('votes.user', 'username');
     
     res.json(book);
   } catch (error) {

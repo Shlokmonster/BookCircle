@@ -18,11 +18,9 @@ const ProgressSchema = new mongoose.Schema({
   },
   notes: {
     type: String
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
   }
+}, { 
+  timestamps: true 
 });
 
 // Create compound index to ensure one progress per user per book

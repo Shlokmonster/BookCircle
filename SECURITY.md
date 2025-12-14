@@ -51,9 +51,10 @@ app.use('/api/auth/', authLimiter);
 5. **MongoDB**: Use MongoDB Atlas with proper network access controls
 6. **Helmet**: Add helmet middleware for additional HTTP header security
 7. **CORS**: Configure CORS to only allow specific origins in production
-8. **Session Management**: Implement token refresh mechanisms
+8. **Session Management**: Implement token refresh mechanisms and consider httpOnly cookies
 9. **Logging**: Add proper logging for security events
 10. **Error Handling**: Don't expose sensitive error information to clients
+11. **LocalStorage**: The current implementation stores JWT in localStorage. For enhanced security, consider using httpOnly cookies or implement proper token rotation
 
 ### Installing Additional Security Packages
 

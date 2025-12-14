@@ -78,7 +78,6 @@ router.post('/:bookId', [
       if (notes !== undefined) {
         progress.notes = notes;
       }
-      progress.updatedAt = Date.now();
     } else {
       progress = new Progress({
         user: req.user.id,

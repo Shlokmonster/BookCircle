@@ -104,7 +104,10 @@ const BookDetail = () => {
       return;
     }
     const content = replyContent[discussionId];
-    if (!content) return;
+    if (!content || content.trim() === '') {
+      alert('Please enter a reply before submitting.');
+      return;
+    }
     
     try {
       await discussionService.addReply(discussionId, content);
@@ -112,6 +115,7 @@ const BookDetail = () => {
       fetchBookDetails();
     } catch (error) {
       console.error('Failed to add reply:', error);
+      alert('Failed to add reply. Please try again.');
     }
   };
 
@@ -126,7 +130,7 @@ const BookDetail = () => {
   const upvotes = book.votes?.filter(v => v.voteType === 'upvote').length || 0;
   const downvotes = book.votes?.filter(v => v.voteType === 'downvote').length || 0;
   const score = upvotes - downvotes;
-  const userVote = book.votes?.find(v => v.user._id === user?.id);
+  const userVote = book.votes?.find(v => v.user?._id === user?.id || v.user === user?.id);
 
   return (
     <div className="book-detail-page">
