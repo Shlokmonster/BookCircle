@@ -1,44 +1,56 @@
-import express from "express"
+import express from "express";
 import dotenv from "dotenv";
+import cors from "cors";
 import db_connect from "./config/db.js";
-import authRoutes from "./routes/auth.routes.js";
 
-console.log("AuthRoutes imported:", authRoutes);
+// Routes imports
+import authRoutes from "./routes/auth.routes.js";
+import clubRoutes from "./routes/club.routes.js";
+import bookRoutes from "./routes/book.routes.js";
+import meetingRoutes from "./routes/meeting.routes.js";
+import voteRoutes from "./routes/vote.routes.js";
+import readingProgressRoutes from "./routes/readingProgress.routes.js";
+import quoteRoutes from "./routes/quote.routes.js";
+
+dotenv.config();
 
 const app = express();
-dotenv.config();
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
 
-// Debug: Log route registration
-console.log("Registering auth routes...");
-console.log("AuthRoutes type:", typeof authRoutes);
-console.log("AuthRoutes methods:", Object.getOwnPropertyNames(authRoutes));
+// Middleware
+app.use(express.json({ limit: '50mb' })); // Increased limit for base64 images
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// CORS configuration
+app.use(cors({
+    origin: 'http://localhost:5173', // Frontend URL
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Route Registration
 app.use("/api/auth", authRoutes);
-console.log("Auth routes registered successfully");
+app.use("/api/clubs", clubRoutes);
+app.use("/api/books", bookRoutes);
+app.use("/api/meetings", meetingRoutes); // Spec says meetings, ensure route matches
+app.use("/api/votes", voteRoutes); // Spec says /api/votes
+app.use("/api/reading-progress", readingProgressRoutes);
+app.use("/api/quotes", quoteRoutes);
 
-// Add a test route to verify server is working
+// Test route
 app.get("/", (req, res) => {
-    res.json({ message: "Server is running!", timestamp: new Date().toISOString() });
+    res.json({ success: true, message: "BookCircle API is running" });
 });
 
-// Debug: Log all incoming requests
-app.use((req, res, next) => {
-    console.log(`${req.method} ${req.path} - ${new Date().toISOString()}`);
-    next();
-});
-
+// Database Connection
 db_connect();
 
+const PORT = process.env.PORT || 3000;
 
-const PORT = 3000; // Using port 3000 as specified in .env
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
 
-
-app.listen(PORT , ()=>{
-    console.log(`server is running on the port - ${PORT}`);
-
-})
 
 
 

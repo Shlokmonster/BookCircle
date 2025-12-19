@@ -1,117 +1,135 @@
-import User from "../models/user.js";
+import User from "../models/User.js";
 import bcrypt from "bcryptjs";
-import { Setuser } from "../config/jwt.js";
+import { generateToken } from "../config/jwt.js";
+import { uploadToCloudinary } from "../utils/uploadHelper.js";
 
-// User Registration
+// @route   POST /api/auth/register
 export const register = async (req, res) => {
   try {
-    console.log("Register function called with body:", req.body);
-    const { name, email, password } = req.body;
+    console.log("Register request body:", req.body);
+    const { username, email, password, fullName } = req.body;
 
-    // Validate input
-    if (!name || !email || !password) {
-      return res.status(400).json({
-        message: "Name, email and password are required"
-      });
+    if (!username || !email || !password) {
+      console.log("Register failed: Missing fields"); // Debug log
+      return res.status(400).json({ success: false, message: "Please provide all required fields" });
     }
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({
-        message: "User already exists with this email"
-      });
+    const userExists = await User.findOne({ $or: [{ email }, { username }] });
+    if (userExists) {
+      console.log("Register failed: User already exists"); // Debug log  
+      return res.status(400).json({ success: false, message: "User already exists" });
     }
 
-    // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create new user
-    const user = new User({
-      name,
+    const user = await User.create({
+      username,
       email,
-      password: hashedPassword
+      password: hashedPassword,
+      fullName
     });
 
-    await user.save();
-
-    // Generate JWT
-    const token = Setuser({
-      id: user._id,
-      email: user.email
-    });
-
-    // Send response (never send password)
-    res.status(201).json({
-      message: "User registered successfully",
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email
-      }
-    });
-
+    if (user) {
+      res.status(201).json({
+        success: true,
+        token: generateToken(user),
+        user: {
+          _id: user._id,
+          username: user.username,
+          email: user.email,
+          fullName: user.fullName,
+          avatar: user.avatar,
+          bio: user.bio,
+          joinedClubs: user.joinedClubs
+        }
+      });
+    } else {
+      res.status(400).json({ success: false, message: "Invalid user data" });
+    }
   } catch (error) {
-    console.error("Registration error:", error);
-    res.status(500).json({
-      message: "Error registering user",
-      error: error.message
-    });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Server Error", error: error.message });
   }
 };
 
-// User Login
+// @route   POST /api/auth/login
 export const login = async (req, res) => {
   try {
-    console.log("Login function called with body:", req.body);
     const { email, password } = req.body;
 
-    // Validate input
-    if (!email || !password) {
-      return res.status(400).json({
-        message: "Email and password are required"
-      });
-    }
-
-    // Check if user exists
     const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({
-        message: "User not found"
+
+    if (user && (await bcrypt.compare(password, user.password))) {
+      res.json({
+        success: true,
+        token: generateToken(user),
+        user: {
+          _id: user._id,
+          username: user.username,
+          email: user.email,
+          fullName: user.fullName,
+          avatar: user.avatar,
+          bio: user.bio,
+          joinedClubs: user.joinedClubs
+        }
       });
+    } else {
+      res.status(401).json({ success: false, message: "Invalid email or password" });
     }
-
-    // Compare password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({
-        message: "Invalid credentials"
-      });
-    }
-
-    // Generate JWT
-    const token = Setuser({
-      id: user._id,
-      email: user.email
-    });
-
-    // Send response (never send password)
-    res.status(200).json({
-      message: "Login successful",
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email
-      }
-    });
-
   } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).json({
-      message: "Server error"
-    });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Server Error", error: error.message });
+  }
+};
+
+// @route   GET /api/auth/profile
+export const getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).populate('joinedClubs');
+    if (user) {
+      res.json({
+        success: true,
+        data: user
+      });
+    } else {
+      res.status(404).json({ success: false, message: "User not found" });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Server Error", error: error.message });
+  }
+};
+
+// @route   PUT /api/auth/profile
+export const updateProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (user) {
+      user.fullName = req.body.fullName || user.fullName;
+      user.bio = req.body.bio || user.bio;
+
+      if (req.body.avatar) {
+        const avatarUrl = await uploadToCloudinary(req.body.avatar);
+        if (avatarUrl) {
+          user.avatar = avatarUrl;
+        }
+      }
+
+      const updatedUser = await user.save();
+      // Re-populate to ensure consistent response
+      await updatedUser.populate('joinedClubs');
+
+      res.json({
+        success: true,
+        data: updatedUser
+      });
+    } else {
+      res.status(404).json({ success: false, message: "User not found" });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Server Error", error: error.message });
   }
 };

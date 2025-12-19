@@ -1,17 +1,24 @@
 import jwt from "jsonwebtoken";
-import dotenv from "dotenv"
+import dotenv from "dotenv";
 dotenv.config();
-const secretOrPrivateKey = process.env.jwt_key
 
-const Setuser = (user)=>{
-   return jwt.sign(user, secretOrPrivateKey, { expiresIn: '24h' })
-}
+const JWT_SECRET = process.env.JWT_SECRET || process.env.jwt_key || "fallback_secret";
 
-const getuser = (token)=>{
-    if(!token){
-        return null
+const generateToken = (user) => {
+    return jwt.sign(
+        { id: user._id, email: user.email },
+        JWT_SECRET,
+        { expiresIn: '24h' }
+    );
+};
+
+const verifyToken = (token) => {
+    if (!token) return null;
+    try {
+        return jwt.verify(token, JWT_SECRET);
+    } catch (error) {
+        return null;
     }
-    return jwt.verify(token, secretOrPrivateKey)
-}
+};
 
-export {Setuser,getuser};
+export { generateToken, verifyToken };
